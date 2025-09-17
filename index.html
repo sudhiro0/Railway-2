@@ -223,48 +223,143 @@
         phrase = ` ${word1} line number ${word2} par aa gayi hai`;
       }
 
-      const utterance = new SpeechSynthesisUtterance(phrase);
+<script>
+  const synth = window.speechSynthesis;
+  const voiceSelect = document.getElementById('voice-select');
+  const rateSlider = document.getElementById('rate-slider');
+  const pitchSlider = document.getElementById('pitch-slider');
+  const volumeSlider = document.getElementById('volume-slider');
+  const rateValue = document.getElementById('rate-value');
+  const pitchValue = document.getElementById('pitch-value');
+  const volumeValue = document.getElementById('volume-value');
+  const speakBtn = document.getElementById('speak-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  const statusDiv = document.getElementById('status');
+  const word1Input = document.getElementById('word1');
+  const word2Select = document.getElementById('word2');
+  const sentenceSelect = document.getElementById('sentence-select');
+  const form = document.getElementById('phrase-form');
 
-      const selectedVoice = voices.find(voice => voice.name === voiceSelect.value);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      }
+  let voices = [];
 
-      utterance.rate = parseFloat(rateSlider.value);
-      utterance.pitch = parseFloat(pitchSlider.value);
-      utterance.volume = parseFloat(volumeSlider.value);
+  function populateVoices() {
+    voices = synth.getVoices();
+    voiceSelect.innerHTML = '<option value="">Select Voice</option>';
+    voices.forEach(voice => {
+      const option = document.createElement('option');
+      option.value = voice.name;
+      option.textContent = `${voice.name} (${voice.lang})`;
+      voiceSelect.appendChild(option);
+    });
 
-      utterance.onstart = () => {
-        statusDiv.textContent = 'Speaking...';
-        speakBtn.classList.add('hidden');
-        stopBtn.classList.remove('hidden');
-      };
+    // Auto-select a Hindi voice if available and not female
+    const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
+    if (hindiVoice) {
+      voiceSelect.value = hindiVoice.name;
+    }
+  }
 
-      utterance.onend = () => {
-        statusDiv.textContent = 'Playback finished.';
-        speakBtn.classList.remove('hidden');
-        stopBtn.classList.add('hidden');
-      };
+  // Listen for voiceschanged event (Chrome loads voices asynchronously)
+  if (typeof synth.onvoiceschanged !== 'undefined') {
+    synth.onvoiceschanged = populateVoices;
+  }
 
-      utterance.onerror = (e) => {
-        statusDiv.textContent = 'An error occurred: ' + e.error;
-        speakBtn.classList.remove('hidden');
-        stopBtn.classList.add('hidden');
-      };
+  // Try to populate immediately as well
+  populateVoices();
 
-      synth.speak(utterance);
+  // Repopulate if user clicks dropdown and it's empty
+  voiceSelect.addEventListener('focus', () => {
+    if (voiceSelect.options.length <= 1) {
+      populateVoices();
+    }
+  });
+
+  rateSlider.addEventListener('input', () => {
+    rateValue.textContent = rateSlider.value;
+  });
+  pitchSlider.addEventListener('input', () => {
+    pitchValue.textContent = pitchSlider.value;
+  });
+  volumeSlider.addEventListener('input', () => {
+    volumeValue.textContent = volumeSlider.value;
+  });
+
+  function speakPhrase() {
+    if (!synth) {
+      statusDiv.textContent = 'Text-to-speech is not supported in this browser.';
+      return;
     }
 
-    speakBtn.addEventListener('click', () => {
-      speakPhrase();
-    });
+    const word1 = word1Input.value.trim();
+    const word2 = word2Select.value;
+    const sentenceOption = sentenceSelect.value;
 
-    stopBtn.addEventListener('click', () => {
-      synth.cancel();
-      statusDiv.textContent = 'Playback stopped.';
+    if (!sentenceOption) {
+      statusDiv.textContent = 'Please select a sentence option.';
+      return;
+    }
+    if (!word1) {
+      statusDiv.textContent = 'Please enter Train number.';
+      return;
+    }
+    if (!word2) {
+      statusDiv.textContent = 'Please select Line number.';
+      return;
+    }
+
+    let phrase = '';
+    if (sentenceOption === '1') {
+      phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa rahi hai`;
+    } else if (sentenceOption === '2') {
+      phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa gayi hai`;
+    } else if (sentenceOption === '3') {
+      phrase = `${word1} line number ${word2} par aa gayi hai`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(phrase);
+
+    // Use selected voice
+    const selectedVoiceName = voiceSelect.value;
+    const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    utterance.rate = parseFloat(rateSlider.value);
+    utterance.pitch = parseFloat(pitchSlider.value);
+    utterance.volume = parseFloat(volumeSlider.value);
+
+    utterance.onstart = () => {
+      statusDiv.textContent = 'Speaking...';
+      speakBtn.classList.add('hidden');
+      stopBtn.classList.remove('hidden');
+    };
+
+    utterance.onend = () => {
+      statusDiv.textContent = 'Playback finished.';
       speakBtn.classList.remove('hidden');
       stopBtn.classList.add('hidden');
-    });
-  </script>
+    };
+
+    utterance.onerror = (e) => {
+      statusDiv.textContent = 'An error occurred: ' + e.error;
+      speakBtn.classList.remove('hidden');
+      stopBtn.classList.add('hidden');
+    };
+
+    synth.speak(utterance);
+  }
+
+  speakBtn.addEventListener('click', () => {
+    speakPhrase();
+  });
+
+  stopBtn.addEventListener('click', () => {
+    synth.cancel();
+    statusDiv.textContent = 'Playback stopped.';
+    speakBtn.classList.remove('hidden');
+    stopBtn.classList.add('hidden');
+  });
+</script>
 </body>
 </html>
