@@ -146,6 +146,8 @@
 
     let voices = [];
 
+    let voices = [];
+
     function populateVoices() {
       voices = synth.getVoices();
       voiceSelect.innerHTML = '<option value="">Select Voice</option>';
@@ -163,7 +165,7 @@
       }
     }
 
-    if (synth.onvoiceschanged !== undefined) {|W
+    if (synth.onvoiceschanged !== undefined) {
       synth.onvoiceschanged = populateVoices;
     }
     populateVoices();
@@ -177,7 +179,6 @@
     volumeSlider.addEventListener('input', () => {
       volumeValue.textContent = volumeSlider.value;
     });
-
     function speakPhrase() {
       if (!synth) {
         statusDiv.textContent = 'Text-to-speech is not supported in this browser.';
