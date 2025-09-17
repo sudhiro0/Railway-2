@@ -146,8 +146,6 @@
 
     let voices = [];
 
-    let voices = [];
-
     function populateVoices() {
       voices = synth.getVoices();
       voiceSelect.innerHTML = '<option value="">Select Voice</option>';
@@ -163,7 +161,7 @@
       if (hindiVoice) {
         voiceSelect.value = hindiVoice.name;
       }
-    }
+    
 
     if (synth.onvoiceschanged !== undefined) {
       synth.onvoiceschanged = populateVoices;
