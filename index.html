@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fixed Phrase Text-to-Speak App with Defaults</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      max-width: 600px;
+      width: 100%;
+    }
+    label {
+      font-weight: 600;
+      color: #333;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    .control-slider input {
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background-position-y: ;: #ddd;
+      outline: none;
+    }
+    .control-slider input::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+    .speak-btn {
+      transition: all 0.3s ease;
+    }
+    .speak-btn:hover {
+      transform: scale(0))0-.05);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    .status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #555;
+      text-align: center;
+      min-height: 1.2em;
+    }
+    .sentence-option {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center"> CNBN New kanpur-Announcement-Speak</h1>
+
+    <form id="phrase-form" onsubmit="return false;">
+      <label for="sentence-select">Select Sentence:</label>
+      <select id="sentence-select" required>
+        <option value="1" selected>down ke krew dhyan dijiye (word1) line number (word2) par aa rahi h</option>
+        <option value="2">down ke krew dhyan dijiye (word1) line number (word2) par aa gayi hai</option> 
+                <option value="3"> (word1) line number (word2) par aa gayi hai</option>
+      </select>
+
+      <label for="word1">Train no (number):</label>
+      <input type="text" id="word1" placeholder="Enter train no" required maxlength="20" />
+
+      <label for="word2">Line no (select line number):</label>
+      <select id="word2" required>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5" selected>5</option>
+      </select>
+
+      <label for="voice-select">Select Voice:</label>
+      <select id="voice-select" class="voice-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full mb-4">
+        <option value="">Select Voice</option>
+      </select>
+
+      <div class="control-slider mb-4">
+        <label for="rate-slider">Rate: <span id="rate-value">1.0</span></label>
+        <input type="range" id="rate-slider" min="0.1" max="3" step="0.1" value="1.0" />
+      </div>
+
+      <div class="control-slider mb-4">
+        <label for="pitch-slider">Pitch: <span id="pitch-value">1.0</span></label>
+        <input type="range" id="pitch-slider" min="0" max="2" step="0.1" value="1.0" />
+      </div>
+
+      <div class="control-slider mb-6">
+        <label for="volume-slider">Volume: <span id="volume-value">1.0</span></label>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1.0" />
+      </div>
+
+      <div class="text-center">
+        <button id="speak-btn" class="speak-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg" type="submit">Speak Phrase</button>
+        <button id="stop-btn" class="speak-btn bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg ml-4 hidden" type="button">Stop Speaking</button>
+      </div>
+    </form>
+
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const synth = window.speechSynthesis;
+    const voiceSelect = document.getElementById('voice-select');
+    const rateSlider = document.getElementById('rate-slider');
+    const pitchSlider = document.getElementById('pitch-slider');
+    const volumeSlider = document.getElementById('volume-slider');
+    const rateValue = document.getElementById('rate-value');
+    const pitchValue = document.getElementById('pitch-value');
+    const volumeValue = document.getElementById('volume-value');
+    const speakBtn = document.getElementById('speak-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const statusDiv = document.getElementById('status');
+    const word1Input = document.getElementById('word1');
+    const word2Select = document.getElementById('word2');
+    const sentenceSelect = document.getElementById('sentence-select');
+    const form = document.getElementById('phrase-form');
+
+    let voices = [];
+
+    function populateVoices() {
+      voices = synth.getVoices();
+      voiceSelect.innerHTML = '<option value="">Select Voice</option>';
+      voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+
+      // Try to select a Hindi voice automatically if available
+      const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
+      if (hindiVoice) {
+        voiceSelect.value = hindiVoice.name;
+      }
+    }
+
+    if (synth.onvoiceschanged !== undefined) {|W
+      synth.onvoiceschanged = populateVoices;
+    }
+    populateVoices();
+
+    rateSlider.addEventListener('input', () => {
+      rateValue.textContent = rateSlider.value;
+    });
+    pitchSlider.addEventListener('input', () => {
+      pitchValue.textContent = pitchSlider.value;
+    });
+    volumeSlider.addEventListener('input', () => {
+      volumeValue.textContent = volumeSlider.value;
+    });
+
+    function speakPhrase() {
+      if (!synth) {
+        statusDiv.textContent = 'Text-to-speech is not supported in this browser.';
+        return;
+      }
+
+      const word1 = word1Input.value.trim();
+      const word2 = word2Select.value;
+      const sentenceOption = sentenceSelect.value;
+
+      if (!sentenceOption) {
+        statusDiv.textContent = 'Please select a sentence option.';
+        return;
+      }
+      if (!word1) {
+        statusDiv.textContent = 'Please enter Word 1.';
+        return;
+      }
+      if (!word2) {
+        statusDiv.textContent = 'Please select Word 2 (line number).';
+        return;
+      }
+
+      let phrase = '';
+      if (sentenceOption === '1') {
+        phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa rahi hai`;
+      } else if (sentenceOption === '2') {
+        phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa gayi hai`;
+      }
+      else if (sentenceOption === '3') {
+        phrase = ` ${word1} line number ${word2} par aa gayi hai`;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(phrase);
+
+      const selectedVoice = voices.find(voice => voice.name === voiceSelect.value);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+
+      utterance.rate = parseFloat(rateSlider.value);
+      utterance.pitch = parseFloat(pitchSlider.value);
+      utterance.volume = parseFloat(volumeSlider.value);
+
+      utterance.onstart = () => {
+        statusDiv.textContent = 'Speaking...';
+        speakBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+      };
+
+      utterance.onend = () => {
+        statusDiv.textContent = 'Playback finished.';
+        speakBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+      };
+
+      utterance.onerror = (e) => {
+        statusDiv.textContent = 'An error occurred: ' + e.error;
+        speakBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+      };
+
+      synth.speak(utterance);
+    }
+
+    speakBtn.addEventListener('click', () => {
+      speakPhrase();
+    });
+
+    stopBtn.addEventListener('click', () => {
+      synth.cancel();
+      statusDiv.textContent = 'Playback stopped.';
+      speakBtn.classList.remove('hidden');
+      stopBtn.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
