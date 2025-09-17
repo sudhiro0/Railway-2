@@ -144,29 +144,42 @@
     const sentenceSelect = document.getElementById('sentence-select');
     const form = document.getElementById('phrase-form');
 
-    let voices = [];
+    const synth = window.speechSynthesis;
+  const voiceSelect = document.getElementById('voice-select');
+  // Remove duplicate declaration
+  let voices = [];
 
-    function populateVoices() {
-      voices = synth.getVoices();
-      voiceSelect.innerHTML = '<option value="">Select Voice</option>';
-      voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
-      });
+  function populateVoices() {
+    voices = synth.getVoices();
+    voiceSelect.innerHTML = '<option value="">Select Voice</option>';
+    voices.forEach(voice => {
+      const option = document.createElement('option');
+      option.value = voice.name;
+      option.textContent = `${voice.name} (${voice.lang})`;
+      voiceSelect.appendChild(option);
+    });
 
-      // Try to select a Hindi voice automatically if available
-      const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
-      if (hindiVoice) {
-        voiceSelect.value = hindiVoice.name;
-      }
-    
-
-    if (synth.onvoiceschanged !== undefined) {
-      synth.onvoiceschanged = populateVoices;
+    // Try to select a Hindi voice automatically if available
+    const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
+    if (hindiVoice) {
+      voiceSelect.value = hindiVoice.name;
     }
-    populateVoices();
+  }
+
+  // This WILL fire on Chrome, but sometimes only after a short delay.
+  if (typeof synth.onvoiceschanged !== 'undefined') {
+    synth.onvoiceschanged = populateVoices;
+  }
+
+  // Try to populate immediately (for browsers that load voices synchronously)
+  populateVoices();
+
+  // OPTIONAL: Repopulate if user clicks dropdown and it's empty
+  voiceSelect.addEventListener('focus', () => {
+    if (voiceSelect.options.length <= 1) {
+      populateVoices();
+    }
+  });
 
     rateSlider.addEventListener('input', () => {
       rateValue.textContent = rateSlider.value;
