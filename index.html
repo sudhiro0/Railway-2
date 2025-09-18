@@ -44,7 +44,7 @@
       width: 100%;
       height: 8px;
       border-radius: 5px;
-      background-position-y: ;: #ddd;
+      background: #ddd;
       outline: none;
     }
     .control-slider input::-webkit-slider-thumb {
@@ -59,7 +59,7 @@
       transition: all 0.3s ease;
     }
     .speak-btn:hover {
-      transform: scale(0))0-.05);
+      transform: scale(1.05);
       box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
     }
     .status {
@@ -77,56 +77,46 @@
 <body>
   <div class="container">
     <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center"> CNBN New kanpur-Announcement-Speak</h1>
-
     <form id="phrase-form" onsubmit="return false;">
       <label for="sentence-select">Select Sentence:</label>
       <select id="sentence-select" required>
         <option value="1" selected>down ke krew dhyan dijiye (word1) line number (word2) par aa rahi h</option>
         <option value="2">down ke krew dhyan dijiye (word1) line number (word2) par aa gayi hai</option> 
-                <option value="3"> (word1) line number (word2) par aa gayi hai</option>
+        <option value="3"> (word1) line number (word2) par aa gayi hai</option>
       </select>
-
       <label for="word1">Train no (number):</label>
       <input type="text" id="word1" placeholder="Enter train no" required maxlength="20" />
-
       <label for="word2">Line no (select line number):</label>
       <select id="word2" required>
-            <option value="1">1</option>
-            <option value="2">2</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
         <option value="3">3</option>
         <option value="4">4</option>
         <option value="5" selected>5</option>
       </select>
-
       <label for="voice-select">Select Voice:</label>
       <select id="voice-select" class="voice-selector px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full mb-4">
         <option value="">Select Voice</option>
       </select>
-
       <div class="control-slider mb-4">
         <label for="rate-slider">Rate: <span id="rate-value">1.0</span></label>
         <input type="range" id="rate-slider" min="0.1" max="3" step="0.1" value="1.0" />
       </div>
-
       <div class="control-slider mb-4">
         <label for="pitch-slider">Pitch: <span id="pitch-value">1.0</span></label>
         <input type="range" id="pitch-slider" min="0" max="2" step="0.1" value="1.0" />
       </div>
-
       <div class="control-slider mb-6">
         <label for="volume-slider">Volume: <span id="volume-value">1.0</span></label>
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1.0" />
       </div>
-
       <div class="text-center">
         <button id="speak-btn" class="speak-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg" type="submit">Speak Phrase</button>
         <button id="stop-btn" class="speak-btn bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg ml-4 hidden" type="button">Stop Speaking</button>
       </div>
     </form>
-
     <div id="status" class="status"></div>
   </div>
-
   <script>
     const synth = window.speechSynthesis;
     const voiceSelect = document.getElementById('voice-select');
@@ -142,44 +132,37 @@
     const word1Input = document.getElementById('word1');
     const word2Select = document.getElementById('word2');
     const sentenceSelect = document.getElementById('sentence-select');
-    const form = document.getElementById('phrase-form');
+    let voices = [];
 
-    const synth = window.speechSynthesis;
-  const voiceSelect = document.getElementById('voice-select');
-  // Remove duplicate declaration
-  let voices = [];
+    function populateVoices() {
+      voices = synth.getVoices();
+      voiceSelect.innerHTML = '<option value="">Select Voice</option>';
+      voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.name;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+      // Auto-select the first Hindi voice if available
+      const hindiVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
+      if (hindiVoice) {
+        voiceSelect.value = hindiVoice.name;
+      }
+    }
 
-  function populateVoices() {
-    voices = synth.getVoices();
-    voiceSelect.innerHTML = '<option value="">Select Voice</option>';
-    voices.forEach(voice => {
-      const option = document.createElement('option');
-      option.value = voice.name;
-      option.textContent = `${voice.name} (${voice.lang})`;
-      voiceSelect.appendChild(option);
+    // Chrome and others may load voices asynchronously
+    if (typeof synth.onvoiceschanged !== 'undefined') {
+      synth.onvoiceschanged = populateVoices;
+    }
+    // Try to populate immediately
+    populateVoices();
+
+    // Repopulate if user clicks dropdown and it's empty
+    voiceSelect.addEventListener('focus', () => {
+      if (voiceSelect.options.length <= 1) {
+        populateVoices();
+      }
     });
-
-    // Try to select a Hindi voice automatically if available
-    const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
-    if (hindiVoice) {
-      voiceSelect.value = hindiVoice.name;
-    }
-  }
-
-  // This WILL fire on Chrome, but sometimes only after a short delay.
-  if (typeof synth.onvoiceschanged !== 'undefined') {
-    synth.onvoiceschanged = populateVoices;
-  }
-
-  // Try to populate immediately (for browsers that load voices synchronously)
-  populateVoices();
-
-  // OPTIONAL: Repopulate if user clicks dropdown and it's empty
-  voiceSelect.addEventListener('focus', () => {
-    if (voiceSelect.options.length <= 1) {
-      populateVoices();
-    }
-  });
 
     rateSlider.addEventListener('input', () => {
       rateValue.textContent = rateSlider.value;
@@ -190,176 +173,71 @@
     volumeSlider.addEventListener('input', () => {
       volumeValue.textContent = volumeSlider.value;
     });
+
     function speakPhrase() {
       if (!synth) {
         statusDiv.textContent = 'Text-to-speech is not supported in this browser.';
         return;
       }
-
       const word1 = word1Input.value.trim();
       const word2 = word2Select.value;
       const sentenceOption = sentenceSelect.value;
-
       if (!sentenceOption) {
         statusDiv.textContent = 'Please select a sentence option.';
         return;
       }
       if (!word1) {
-        statusDiv.textContent = 'Please enter Word 1.';
+        statusDiv.textContent = 'Please enter Train number.';
         return;
       }
       if (!word2) {
-        statusDiv.textContent = 'Please select Word 2 (line number).';
+        statusDiv.textContent = 'Please select Line number.';
         return;
       }
-
       let phrase = '';
       if (sentenceOption === '1') {
         phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa rahi hai`;
       } else if (sentenceOption === '2') {
         phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa gayi hai`;
+      } else if (sentenceOption === '3') {
+        phrase = `${word1} line number ${word2} par aa gayi hai`;
       }
-      else if (sentenceOption === '3') {
-        phrase = ` ${word1} line number ${word2} par aa gayi hai`;
+      const utterance = new SpeechSynthesisUtterance(phrase);
+      const selectedVoiceName = voiceSelect.value;
+      const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
+      utterance.rate = parseFloat(rateSlider.value);
+      utterance.pitch = parseFloat(pitchSlider.value);
+      utterance.volume = parseFloat(volumeSlider.value);
+      utterance.onstart = () => {
+        statusDiv.textContent = 'Speaking...';
+        speakBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+      };
+      utterance.onend = () => {
+        statusDiv.textContent = 'Playback finished.';
+        speakBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+      };
+      utterance.onerror = (e) => {
+        statusDiv.textContent = 'An error occurred: ' + e.error;
+        speakBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+      };
+      synth.speak(utterance);
+    }
 
-<script>
-  const synth = window.speechSynthesis;
-  const voiceSelect = document.getElementById('voice-select');
-  const rateSlider = document.getElementById('rate-slider');
-  const pitchSlider = document.getElementById('pitch-slider');
-  const volumeSlider = document.getElementById('volume-slider');
-  const rateValue = document.getElementById('rate-value');
-  const pitchValue = document.getElementById('pitch-value');
-  const volumeValue = document.getElementById('volume-value');
-  const speakBtn = document.getElementById('speak-btn');
-  const stopBtn = document.getElementById('stop-btn');
-  const statusDiv = document.getElementById('status');
-  const word1Input = document.getElementById('word1');
-  const word2Select = document.getElementById('word2');
-  const sentenceSelect = document.getElementById('sentence-select');
-  const form = document.getElementById('phrase-form');
-
-  let voices = [];
-
-  function populateVoices() {
-    voices = synth.getVoices();
-    voiceSelect.innerHTML = '<option value="">Select Voice</option>';
-    voices.forEach(voice => {
-      const option = document.createElement('option');
-      option.value = voice.name;
-      option.textContent = `${voice.name} (${voice.lang})`;
-      voiceSelect.appendChild(option);
+    speakBtn.addEventListener('click', () => {
+      speakPhrase();
     });
-
-    // Auto-select a Hindi voice if available and not female
-    const hindiVoice = voices.find(v => v.lang.startsWith('hi') && !v.name.toLowerCase().includes('female'));
-    if (hindiVoice) {
-      voiceSelect.value = hindiVoice.name;
-    }
-  }
-
-  // Listen for voiceschanged event (Chrome loads voices asynchronously)
-  if (typeof synth.onvoiceschanged !== 'undefined') {
-    synth.onvoiceschanged = populateVoices;
-  }
-
-  // Try to populate immediately as well
-  populateVoices();
-
-  // Repopulate if user clicks dropdown and it's empty
-  voiceSelect.addEventListener('focus', () => {
-    if (voiceSelect.options.length <= 1) {
-      populateVoices();
-    }
-  });
-
-  rateSlider.addEventListener('input', () => {
-    rateValue.textContent = rateSlider.value;
-  });
-  pitchSlider.addEventListener('input', () => {
-    pitchValue.textContent = pitchSlider.value;
-  });
-  volumeSlider.addEventListener('input', () => {
-    volumeValue.textContent = volumeSlider.value;
-  });
-
-  function speakPhrase() {
-    if (!synth) {
-      statusDiv.textContent = 'Text-to-speech is not supported in this browser.';
-      return;
-    }
-
-    const word1 = word1Input.value.trim();
-    const word2 = word2Select.value;
-    const sentenceOption = sentenceSelect.value;
-
-    if (!sentenceOption) {
-      statusDiv.textContent = 'Please select a sentence option.';
-      return;
-    }
-    if (!word1) {
-      statusDiv.textContent = 'Please enter Train number.';
-      return;
-    }
-    if (!word2) {
-      statusDiv.textContent = 'Please select Line number.';
-      return;
-    }
-
-    let phrase = '';
-    if (sentenceOption === '1') {
-      phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa rahi hai`;
-    } else if (sentenceOption === '2') {
-      phrase = `down ke krew dhyan dijiye ${word1} line number ${word2} par aa gayi hai`;
-    } else if (sentenceOption === '3') {
-      phrase = `${word1} line number ${word2} par aa gayi hai`;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(phrase);
-
-    // Use selected voice
-    const selectedVoiceName = voiceSelect.value;
-    const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-
-    utterance.rate = parseFloat(rateSlider.value);
-    utterance.pitch = parseFloat(pitchSlider.value);
-    utterance.volume = parseFloat(volumeSlider.value);
-
-    utterance.onstart = () => {
-      statusDiv.textContent = 'Speaking...';
-      speakBtn.classList.add('hidden');
-      stopBtn.classList.remove('hidden');
-    };
-
-    utterance.onend = () => {
-      statusDiv.textContent = 'Playback finished.';
+    stopBtn.addEventListener('click', () => {
+      synth.cancel();
+      statusDiv.textContent = 'Playback stopped.';
       speakBtn.classList.remove('hidden');
       stopBtn.classList.add('hidden');
-    };
-
-    utterance.onerror = (e) => {
-      statusDiv.textContent = 'An error occurred: ' + e.error;
-      speakBtn.classList.remove('hidden');
-      stopBtn.classList.add('hidden');
-    };
-
-    synth.speak(utterance);
-  }
-
-  speakBtn.addEventListener('click', () => {
-    speakPhrase();
-  });
-
-  stopBtn.addEventListener('click', () => {
-    synth.cancel();
-    statusDiv.textContent = 'Playback stopped.';
-    speakBtn.classList.remove('hidden');
-    stopBtn.classList.add('hidden');
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
